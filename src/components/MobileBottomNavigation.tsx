@@ -57,7 +57,7 @@ export const MobileBottomNavigation: React.FC<MobileBottomNavigationProps> = ({
   ];
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-40 block md:hidden">
+    <nav className="fixed bottom-0 left-0 right-0 z-40">
       <div className="mx-4 mb-4">
         <div className="glass-card rounded-2xl p-2 flex items-center justify-around relative">
           {navItems.map((item) => {

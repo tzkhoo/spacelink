@@ -5,7 +5,6 @@ import { motion } from 'framer-motion';
 import { LanguageProvider } from '@/contexts/LanguageContext';
 import { LanguageSwitcher } from '@/components/LanguageSwitcher';
 import { ProfileSection } from '@/components/ProfileSection';
-import { Navigation } from '@/components/Navigation';
 import { MobileBottomNavigation } from '@/components/MobileBottomNavigation';
 import { HeroSection } from '@/components/HeroSection';
 import { SpaceHostsInterface } from '@/components/SpaceHostsInterface';
@@ -63,16 +62,6 @@ const Index = () => {
           <ProfileSection />
         </div>
 
-        {/* Desktop Navigation */}
-        {!showHero && (
-          <div className="container mx-auto pt-8">
-            <Navigation 
-              activeTab={activeTab} 
-              onTabChange={handleTabChange} 
-              position="top" 
-            />
-          </div>
-        )}
 
         {/* Main Content */}
         <main className="relative z-10">
@@ -222,7 +211,7 @@ const Index = () => {
               </div>
             </>
           ) : (
-            <div className="container mx-auto py-8">
+            <div className="container mx-auto py-8 pb-32">
               {/* Interface Content */}
               {activeTab === 'hosts' ? (
                 <SpaceHostsInterface />
