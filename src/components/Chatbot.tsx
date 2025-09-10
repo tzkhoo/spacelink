@@ -51,7 +51,8 @@ export const Chatbot: React.FC<ChatbotProps> = ({ isOpen = false, onClose }) => 
 
   const getRandomSuggestions = () => {
     const shuffled = [...spaceLinkPrompts].sort(() => 0.5 - Math.random());
-    return [shuffled[0].label, shuffled[1].label] as [string, string];
+    const selected = shuffled.slice(0, 2);
+    return [selected[0].label, selected[1].label] as [string, string];
   };
 
   // Auto-scroll to bottom of messages
@@ -88,7 +89,7 @@ export const Chatbot: React.FC<ChatbotProps> = ({ isOpen = false, onClose }) => 
 
     try {
       // Send to webhook
-      const response = await fetch('https://wonder6.app.n8n.cloud/webhook/ad30832c-1f6b-4293-8eec-85490817e62d', {
+      const response = await fetch('https://wonder6.app.n8n.cloud/webhook-test/ad30832c-1f6b-4293-8eec-85490817e62d', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
