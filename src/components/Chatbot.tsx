@@ -89,7 +89,7 @@ export const Chatbot: React.FC<ChatbotProps> = ({ isOpen = false, onClose }) => 
 
     try {
       // Send to webhook
-      const response = await fetch('https://wonder6.app.n8n.cloud/webhook-test/ad30832c-1f6b-4293-8eec-85490817e62d', {
+      const response = await fetch('https://wonder6.app.n8n.cloud/webhook/ad30832c-1f6b-4293-8eec-85490817e62d', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -104,7 +104,14 @@ export const Chatbot: React.FC<ChatbotProps> = ({ isOpen = false, onClose }) => 
       let botResponseContent = '';
       if (response.ok) {
         const responseData = await response.text();
-        botResponseContent = responseData || getBotResponse(content);
+        try {
+          // Parse JSON response and extract the "response" field
+          const parsedResponse = JSON.parse(responseData);
+          botResponseContent = parsedResponse.response || responseData || getBotResponse(content);
+        } catch (parseError) {
+          // If parsing fails, use the raw response or fallback
+          botResponseContent = responseData || getBotResponse(content);
+        }
       } else {
         botResponseContent = getBotResponse(content);
       }
