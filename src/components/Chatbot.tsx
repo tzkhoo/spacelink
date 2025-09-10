@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { MessageCircle, Send, X, Loader2 } from 'lucide-react';
+import { MessageCircle, Send, X, Loader2, Shuffle } from 'lucide-react';
 
 interface Message {
   id: string;
@@ -22,12 +22,37 @@ export const Chatbot: React.FC<ChatbotProps> = ({ isOpen = false, onClose }) => 
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputMessage, setInputMessage] = useState('');
   const [isTyping, setIsTyping] = useState(false);
+  const [currentSuggestions, setCurrentSuggestions] = useState<[string, string]>(['Overview', 'Target Market']);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  const quickReplies = [
-    t('chat.quickReply.nearestSpaces'),
-    t('chat.quickReply.insurance')
+  // SpaceLink prompts with labels and full questions
+  const spaceLinkPrompts = [
+    { label: 'Overview', question: 'What is the core idea behind SpaceLink?' },
+    { label: 'Target Market', question: 'Who is the target audience for SpaceLink?' },
+    { label: 'Business Model', question: 'How does SpaceLink make money?' },
+    { label: 'Market Demand', question: 'Why is there a need for this service in Hong Kong?' },
+    { label: 'Key Features', question: 'What are the key features of the SpaceLink platform?' },
+    { label: 'User Experience', question: 'How does SpaceLink improve the user experience compared to traditional storage?' },
+    { label: 'Technology', question: 'What technologies are used in the SpaceLink platform?' },
+    { label: 'AI Integration', question: 'How is AI integrated into the SpaceLink service?' },
+    { label: 'Insurance', question: 'Does SpaceLink offer insurance?' },
+    { label: 'Pricing', question: 'How is pricing determined for storage?' },
+    { label: 'Support', question: 'What support services are available for SpaceLink users?' },
+    { label: 'Partnerships', question: 'Does SpaceLink have any strategic partnerships?' },
+    { label: 'Competition', question: 'How does SpaceLink differ from its competitors?' },
+    { label: 'Risk Management', question: 'How does SpaceLink mitigate potential risks?' },
+    { label: 'Compliance', question: 'How does SpaceLink ensure compliance with regulations?' },
+    { label: 'Marketing', question: 'What is SpaceLink\'s marketing approach?' },
+    { label: 'Revenue Model', question: 'What is the revenue model for SpaceLink?' },
+    { label: 'Market Size', question: 'What is the projected market size for SpaceLink?' },
+    { label: 'Expansion', question: 'Are there any plans to expand outside Hong Kong?' },
+    { label: 'Sustainability', question: 'Does SpaceLink have a sustainability plan?' }
   ];
+
+  const getRandomSuggestions = () => {
+    const shuffled = [...spaceLinkPrompts].sort(() => 0.5 - Math.random());
+    return [shuffled[0].label, shuffled[1].label] as [string, string];
+  };
 
   // Auto-scroll to bottom of messages
   useEffect(() => {
@@ -61,8 +86,37 @@ export const Chatbot: React.FC<ChatbotProps> = ({ isOpen = false, onClose }) => 
     setInputMessage('');
     setIsTyping(true);
 
-    // Simulate bot response
-    setTimeout(() => {
+    try {
+      // Send to webhook
+      const response = await fetch('https://wonder6.app.n8n.cloud/webhook/ad30832c-1f6b-4293-8eec-85490817e62d', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          message: content,
+          timestamp: new Date().toISOString(),
+          userId: 'user_' + Date.now() // Generate a simple user ID
+        }),
+      });
+
+      let botResponseContent = '';
+      if (response.ok) {
+        const responseData = await response.text();
+        botResponseContent = responseData || getBotResponse(content);
+      } else {
+        botResponseContent = getBotResponse(content);
+      }
+
+      const botResponse: Message = {
+        id: (Date.now() + 1).toString(),
+        content: botResponseContent,
+        isUser: false,
+        timestamp: new Date()
+      };
+      setMessages(prev => [...prev, botResponse]);
+    } catch (error) {
+      // Fallback to local response if webhook fails
       const botResponse: Message = {
         id: (Date.now() + 1).toString(),
         content: getBotResponse(content),
@@ -70,8 +124,9 @@ export const Chatbot: React.FC<ChatbotProps> = ({ isOpen = false, onClose }) => 
         timestamp: new Date()
       };
       setMessages(prev => [...prev, botResponse]);
+    } finally {
       setIsTyping(false);
-    }, 1500);
+    }
   };
 
   const getBotResponse = (userMessage: string): string => {
@@ -96,8 +151,15 @@ export const Chatbot: React.FC<ChatbotProps> = ({ isOpen = false, onClose }) => 
     return 'Thank you for your question! Our team is here to help you find the perfect storage solution. Would you like me to search for spaces in a specific area?';
   };
 
-  const handleQuickReply = (reply: string) => {
-    sendMessage(reply);
+  const handleSuggestedPrompt = (label: string) => {
+    const prompt = spaceLinkPrompts.find(p => p.label === label);
+    if (prompt) {
+      setInputMessage(prompt.question);
+    }
+  };
+
+  const randomizeSuggestions = () => {
+    setCurrentSuggestions(getRandomSuggestions());
   };
 
   return (
@@ -164,23 +226,33 @@ export const Chatbot: React.FC<ChatbotProps> = ({ isOpen = false, onClose }) => 
             <div ref={messagesEndRef} />
           </div>
 
-          {/* Quick Replies */}
-          {messages.length === 1 && (
-            <div className="px-4 pb-2">
-              <div className="flex flex-wrap gap-2">
-                {quickReplies.map((reply, index) => (
-                  <Badge
-                    key={index}
-                    variant="outline"
-                    className="cursor-pointer hover:bg-primary hover:text-primary-foreground transition-smooth text-xs rounded-lg"
-                    onClick={() => handleQuickReply(reply)}
-                  >
-                    {reply}
-                  </Badge>
-                ))}
-              </div>
+          {/* Suggested Prompts */}
+          <div className="px-4 pb-2">
+            <div className="text-xs text-muted-foreground mb-2 flex items-center justify-between">
+              <span>Suggested Prompts:</span>
+              <Button
+                onClick={randomizeSuggestions}
+                variant="ghost"
+                size="sm"
+                className="h-6 w-6 p-0 hover:bg-white/20 rounded-full"
+                title="Randomize suggestions"
+              >
+                <Shuffle className="h-3 w-3" strokeWidth={1.5} />
+              </Button>
             </div>
-          )}
+            <div className="flex gap-2">
+              {currentSuggestions.map((label, index) => (
+                <Badge
+                  key={`${label}-${index}`}
+                  variant="outline"
+                  className="cursor-pointer hover:bg-primary hover:text-primary-foreground transition-smooth text-xs rounded-lg flex-1 justify-center py-1.5 border-primary/20 hover:border-primary"
+                  onClick={() => handleSuggestedPrompt(label)}
+                >
+                  {label}
+                </Badge>
+              ))}
+            </div>
+          </div>
 
           {/* Input */}
           <div className="p-4 border-t border-glass-border">
